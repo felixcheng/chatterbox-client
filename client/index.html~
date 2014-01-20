@@ -7,29 +7,16 @@
 
     <!-- external javascript -->
     <script src="bower_components/jquery/jquery.min.js"></script>
-    <script src="bower_components/underscore/underscore-min.js"></script>
+    <script src="bower_components/underscore/underscore.min.js"></script>
     
     <!-- internal javascript -->
     <script src="scripts/config.js"></script>
     <script src="scripts/app.js"></script>
-
-    <!-- templates -->
-    <script id="message-template" type="text/x-handlebars-template">
-      <span id="user">@{{user_name}}</span>
-      <span id="time">{{time}}</span>
-      <br />
-      <span id="message">{{message}}</span>
-    </script>
   </head>
   <body>
 
     <div id="main">
       <h1>Chat-Client</h1>
-      <input type="text" id="message">
-      <button id="submitButton">Submit</button>
-      <div id="display">
-
-      </div>
     </div>
 
   </body>
