@@ -1,3 +1,28 @@
+
+var addMessages = function(data, display) {
+  // debugger;
+  var context;
+  var messages = data.results;
+  var message_html;
+  var $message; 
+  // var $display = clear_messages(display);
+  var source = $("#message-template").html();
+  var template = Handlebars.compile(source);
+
+  for(var i = 0; i < messages.length; i++){
+    $message = $('<div id="messageBox" style="clear: both;"></div>');
+    context = {
+      // display_name: display,
+      user_name: messages[i].username,
+      time: messages[i].updatedAt,
+      message: messages[i].text
+    };
+    message_html = template(context);
+    $message.html(message_html);
+    $message.prependTo($('#display'));
+  }
+};
+
 $(document).ready(function(){
 
   $("#submitButton").on('click', function(){
@@ -18,45 +43,16 @@ $(document).ready(function(){
       }
     });
   });
-
-  var add_tweets = function(tweets, column) {
-    var context;
-    var tweet_html;
-    var $tweet; 
-    var $column = clear_tweets(column);
-    var source = $("#tweet-template").html();
-    var template = Handlebars.compile(source);
-
-    for(var i = 0; i < tweets.length; i++){
-      $tweet = $('<div id="tweet" style="clear: both;"></div>');
-      context = {
-        column_name: column
-        ,user_name: tweets[i].user
-        ,time: moment(tweets[i].created_at).fromNow()
-        ,message: tweets[i].message
-      };
-      tweet_html = template(context);
-      $tweet.html(tweet_html);
-      $tweet.prependTo($column);
-    }
-  };
   
   setInterval(function(){
-    var extractMessages = function(data){
-      // console.dir(data);
-      for(var i = 0; i <data.results.length; i++){
-        $("#display").append(data.results[i].username + 
-          " :" + data.results[i].text + "\n");
-      }
-    };
-
     $.ajax({
       // always use this url
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'GET',
+      data: {sortid: '-updatedAt'},
       contentType: 'application/json',
       success: function (data) {
-        extractMessages(data);
+        addMessages(data, $('#display'));
       },
       error: function (data) {
         console.error('chatterbox: Failed to get new messages. ERR:' + data);
@@ -64,3 +60,12 @@ $(document).ready(function(){
     });
   }, 300);
 });
+
+
+// var extractMessages = function(data){
+//   // console.dir(data);
+//   for(var i = 0; i <data.results.length; i++){
+//     $("#display").append(data.results[i].username + 
+//       " :" + data.results[i].text + "\n");
+//   }
+// };
