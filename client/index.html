@@ -16,20 +16,24 @@
 
     <!-- templates -->
     <script id="message-template" type="text/x-handlebars-template">
-      <span id="user">@{{user_name}}</span>
+      <span id="user">{{user_name}}</span>
       <span id="time">{{time}}</span>
       <br />
       <span id="message">{{message}}</span>
     </script>
   </head>
   <body>
-
+    <!-- <img src="http://i.imgur.com/zqU9SjT.jpg"></img> -->
     <div id="main">
       <h1>Chat-Client</h1>
-      <input type="text" id="message">
+      <h3>You are in room: </h3>
+      <input type="text" id="userInput">
       <button id="submitButton">Submit</button>
+      <input type="text" id="newRoomInput">
+      <button id="createRoomButton">Create Room</button>
       <div id="display">
-
+        <div id="rooms"></div>
+        <div id="messages"></div>
       </div>
     </div>
 
