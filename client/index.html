@@ -9,6 +9,7 @@
     <script src="bower_components/jquery/jquery.min.js"></script>
     <script src="bower_components/underscore/underscore-min.js"></script>
     <script src="bower_components/handlebars/handlebars.min.js"></script>
+    <script src="bower_components/backbone/backbone-min.js"></script>
     
     <!-- internal javascript -->
     <script src="scripts/config.js"></script>
@@ -23,14 +24,13 @@
     </script>
   </head>
   <body>
-    <!-- <img src="http://i.imgur.com/zqU9SjT.jpg"></img> -->
     <div id="main">
       <h1>Chat-Client</h1>
       <h3>You are in room: </h3>
       <input type="text" id="userInput">
       <button id="submitButton">Submit</button>
       <input type="text" id="newRoomInput">
-      <button id="createRoomButton">Create Room</button>
+      <button id="createRoomButton">Enter Room</button>
       <div id="display">
         <div id="rooms"></div>
         <div id="messages"></div>

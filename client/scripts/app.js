@@ -1,91 +1,21 @@
-var roomname = "all";
-var roomList = {};
-var friends = {};
 
-var displayMessages = function(messages, display, roomname) {
-  var context;
-  var message_html;
-  var $messageBox; 
-  // var $display = clear_messages(display);
-  var source = $("#message-template").html();
-  var template = Handlebars.compile(source);
-
-  display.html("");
-
-  for(var i = 0; i < messages.length; i++){
-    $messageBox = $('<div id="messageBox"></div>');
-    if(messages[i].text && messages[i].text.length > 5000 ||
-       (messages[i].roomname !== roomname && roomname !== "all")){
-      continue;
-    }
-    context = {
-      // display_name: display,
-      user_name: messages[i].username,
-      time: messages[i].updatedAt,
-      message: encodeHTML(messages[i].text)
-    };
-    message_html = template(context);
-    $messageBox.html(message_html);
-    if(friends[messages[i].username]){
-      $messageBox.addClass('friend');
-    }
-    $messageBox.appendTo($('#messages'));
-  }
-};
-
-function encodeHTML(string) {
-  string =  string || "";
-  return string.replace(/&/g, '&amp;')
-               .replace(/</g, '&lt;')
-               .replace(/>/g, '&rt;')
-               .replace(/"/g, '&quot;');
-};
-
-// TODO: clear out roomList periodically
-var buildRoomList = function(data, roomListModel, $roomListView){
-  _.each(data, function(value){
-    if (!roomListModel[value.roomname]){
-      roomListModel[value.roomname] = true;
-      var $roomnameView = $('<ul class="room"></ul>');
-      $roomnameView.text(value.roomname);
-      $roomListView.append($roomnameView);
-    }
-  })
-};
-
-var updateRoomname = function(room){
-  $('h3').text("You are in room: " + room);
-  roomname = room;
-};
-
-$(document).ready(function(){
-
-  var url = document.URL;
-  var regex = new RegExp(/username=([^&]+)/g);
-  // debugger;
-  var userName = regex.exec(url)[1];
-
-  $("body").on("click", '#user', function(){
-    friends[this.textContent] = !friends[this.textContent];
-  });
-
-  $('body').on("click", '.room', function(){
-    updateRoomname(this.textContent);
-  });
-
-  $("#createRoomButton").on('click', function(){
-    updateRoomname($('#newRoomInput').val());
-  });
-
-  $("#submitButton").on('click', function(){
-    var message = $("#userInput").val();
-    if(message === "") return;
-    // debugger;
+var ChatBox = Backbone.Model.extend({
+  initialize: function(){
+    var regex = new RegExp(/username=([^&]+)/g);
+    var url = document.URL;
+    this.set({roomname: "all",
+              roomList: {},
+              friends: {},
+              messageList: [],
+              userName: regex.exec(url)[1]
+            });
+  },
+  submit: function(message){
     $.ajax({
       // always use this url
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'POST',
-      data: JSON.stringify({username: userName,
+      data: JSON.stringify({username: this.get('userName'),
                             text: message,
                             roomname: roomname}),
       contentType: 'application/json',
@@ -93,14 +23,11 @@ $(document).ready(function(){
         console.log('chatterbox: Message sent');
       },
       error: function (data) {
-        debugger;
-        // see: https://developer.mozilla.org/en-US/docs/Web/API/console.error
         console.error('chatterbox: Failed to send message');
       }
     });
-  });
-
-  setInterval(function(){
+  },
+  getMessage: function(options){
     $.ajax({
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'GET',
@@ -108,24 +35,88 @@ $(document).ready(function(){
       //pls create an object under data.
       data: {order:'-createdAt'},
       contentType: 'application/json',
-      success: function (data) {
-        var messages = data.results
-        displayMessages(messages, $('#messages'), roomname);
-        buildRoomList(messages, roomList, $('#rooms'));
-      },
+      success: options.success,
       error: function (data) {
         console.error('chatterbox: Failed to get new messages. ERR:' + data);
       }
     });
-  }, 300);
+  }
 });
 
+// TODO: clear out roomList periodically
+// $(document).ready(function(){
+var ChatBoxView = Backbone.View.extend({
+  initialize: function(){
+    $("body").on("click", '#user', function(){
+      friends[this.textContent] = !friends[this.textContent];
+    });
+    var updateRoomname = function(room){
+      $('h3').text("You are in room: " + room);
+      roomname = room;
+    };
+    $('body').on("click", '.room', function(){
+      updateRoomname(this.textContent);
+    });
+    $("#createRoomButton").on('click', function(){
+      updateRoomname($('#newRoomInput').val());
+    });
+    $("#submitButton").on('click', function(){
+      var message = $("#userInput").val();
+      if(message === "") return;
+      submit(userName, message);
+    });
+    var options = {
+      model: this.model,
+      success:function (data) {
+                var messages = data.results
+                $('#messages').html("");
+                this.displayMessages(messages);
+                this.buildRoomList(messages, roomList, $('#rooms'));
+              }.bind(this),
+      failure: function(data){console.log("Failed to get messages")}
+            };
+    setInterval(this.model.getMessage.bind(this.model,options), 300);
+  },
+  displayMessages: function(messages) {
+    var context;
+    var message_html;
+    var $messageBox; 
+    var room = this.model.get('roomname');
+    var source = $("#message-template").html();
+    var template = Handlebars.compile(source);
+    for(var i = 0; i < messages.length; i++){
+      $messageBox = $('<div id="messageBox"></div>');
+      if(messages[i].text && messages[i].text.length > 5000 ||
+         (messages[i].roomname !== room && room !== "all")){
+        continue;
+      }
+      context = {
+        user_name: messages[i].username,
+        time: messages[i].updatedAt,
+        message: messages[i].text
+      };
+      message_html = template(context);
+      $messageBox.html(message_html);
+      if(this.model.get('friends')[messages[i].username]){
+        $messageBox.addClass('friend');
+      }
+      $messageBox.appendTo($('#messages'));
+    }
+  },
+  buildRoomList: function(data, roomListModel, $roomListView){
+    debugger;
+    _.each(data, function(value){
+      if (!roomListModel[value.roomname]){
+        roomListModel[value.roomname] = true;
+        var $roomnameView = $('<ul class="room"></ul>');
+        $roomnameView.text(value.roomname);
+        $roomListView.append($roomnameView);
+      }
+    })
+  }
+});
 
+var chatBox = new ChatBox();
+var chatBoxView = new ChatBoxView({model:chatBox});
 
-// var extractMessages = function(data){
-//   // console.dir(data);
-//   for(var i = 0; i <data.results.length; i++){
-//     $("#display").append(data.results[i].username + 
-//       " :" + data.results[i].text + "\n");
-//   }
-// };
+$('body').append(chatBoxView.render());
