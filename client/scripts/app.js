@@ -1,10 +1,11 @@
-var roomname = "";
+var roomname = "all";
 var roomList = {};
+var friends = {};
 
 var displayMessages = function(messages, display, roomname) {
   var context;
   var message_html;
-  var $message; 
+  var $messageBox; 
   // var $display = clear_messages(display);
   var source = $("#message-template").html();
   var template = Handlebars.compile(source);
@@ -12,9 +13,9 @@ var displayMessages = function(messages, display, roomname) {
   display.html("");
 
   for(var i = 0; i < messages.length; i++){
-    $message = $('<div id="messageBox"></div>');
+    $messageBox = $('<div id="messageBox"></div>');
     if(messages[i].text && messages[i].text.length > 5000 ||
-       (messages[i].roomname !== roomname && roomname)){
+       (messages[i].roomname !== roomname && roomname !== "all")){
       continue;
     }
     context = {
@@ -24,8 +25,11 @@ var displayMessages = function(messages, display, roomname) {
       message: encodeHTML(messages[i].text)
     };
     message_html = template(context);
-    $message.html(message_html);
-    $message.appendTo($('#messages'));
+    $messageBox.html(message_html);
+    if(friends[messages[i].username]){
+      $messageBox.addClass('friend');
+    }
+    $messageBox.appendTo($('#messages'));
   }
 };
 
@@ -42,16 +46,16 @@ var buildRoomList = function(data, roomListModel, $roomListView){
   _.each(data, function(value){
     if (!roomListModel[value.roomname]){
       roomListModel[value.roomname] = true;
-      $roomListView.append('<ul class="room">'+value.roomname+"</ul>");
+      var $roomnameView = $('<ul class="room"></ul>');
+      $roomnameView.text(value.roomname);
+      $roomListView.append($roomnameView);
     }
   })
 };
 
-var updateRoomname = function(roomname){
-  $('h3').text("You are in room: " + roomname);
-  if(roomname === 'all'){
-    roomname = undefined;
-  }
+var updateRoomname = function(room){
+  $('h3').text("You are in room: " + room);
+  roomname = room;
 };
 
 $(document).ready(function(){
@@ -61,13 +65,12 @@ $(document).ready(function(){
   // debugger;
   var userName = regex.exec(url)[1];
 
-  $("body").on("click", '.user', function(){
-    console.log("user clicked");
+  $("body").on("click", '#user', function(){
+    friends[this.textContent] = !friends[this.textContent];
   });
 
   $('body').on("click", '.room', function(){
     updateRoomname(this.textContent);
-    console.log("TEST!!");
   });
 
   $("#createRoomButton").on('click', function(){
@@ -84,7 +87,7 @@ $(document).ready(function(){
       type: 'POST',
       data: JSON.stringify({username: userName,
                             text: message,
-                            roomname: "testicles"}),
+                            roomname: roomname}),
       contentType: 'application/json',
       success: function (data) {
         console.log('chatterbox: Message sent');
