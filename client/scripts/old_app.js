@@ -57,7 +57,6 @@ var updateRoomname = function(room){
   $('h3').text("You are in room: " + room);
   roomname = room;
 };
-
 $(document).ready(function(){
 
   var url = document.URL;

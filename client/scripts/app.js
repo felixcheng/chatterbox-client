@@ -1,4 +1,3 @@
-
 var ChatBox = Backbone.Model.extend({
   initialize: function(){
     var regex = new RegExp(/username=([^&]+)/g);
@@ -13,7 +12,6 @@ var ChatBox = Backbone.Model.extend({
   submit: function(message){
     // debugger;
     $.ajax({
-      // always use this url
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'POST',
       data: JSON.stringify({username: this.get('userName'),
@@ -21,7 +19,7 @@ var ChatBox = Backbone.Model.extend({
                             roomname: this.get('roomname')}),
       contentType: 'application/json',
       success: function (data) {
-        console.log('chatterbox: Message sent');
+        // console.log('chatterbox: Message sent');
       },
       error: function (data) {
         console.error('chatterbox: Failed to send message');
@@ -31,8 +29,8 @@ var ChatBox = Backbone.Model.extend({
   getMessage: function(options){
     var data = {order:'-createdAt'};
     var room = this.get('roomname');
-    debugger;
-    this.get('roomname') || (data.where = {roomname:this.get('roomname')});
+    this.get('roomname') && (data.where = {roomname:this.get('roomname')});
+    // debugger;
     $.ajax({
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'GET',
@@ -45,6 +43,9 @@ var ChatBox = Backbone.Model.extend({
         console.error('chatterbox: Failed to get new messages. ERR:' + data);
       }
     });
+  },
+  addFriend: function(friendName){
+    this.get('friends')[friendName] = !this.get('friends')[friendName];
   }
 });
 
@@ -59,10 +60,9 @@ var ChatBoxView = Backbone.View.extend({
     'click button#submitMessage' : 'submitClickHandler'
   },
   userClickHandler: function(event){
-
-    console.log('userclick');
-    var friend = this.model.get('')
-    this.model.set(JSON.stringify(!friend));
+    var friend = $(event.currentTarget).text();
+    // this.model.set('',JSON.stringify(!friend));
+    this.model.addFriend(friend);
   },
   roomClickHandler: function(event){
     var room = $(event.currentTarget).text();
@@ -82,7 +82,6 @@ var ChatBoxView = Backbone.View.extend({
   initialize: function(){
     var options = {
       success:function (data) {
-        console.log('successful get!');
         var model = this.model;
         var messages = data.results
         $('#messages').html("");
@@ -103,7 +102,7 @@ var ChatBoxView = Backbone.View.extend({
     for(var i = 0; i < messages.length; i++){
       $messageBox = $('<div id="messageBox"></div>');
       if(messages[i].text && messages[i].text.length > 5000 ||
-         (messages[i].roomname !== room && room !== "all")){
+         (messages[i].roomname !== room && room !== "")){
         continue;
       }
       context = {
