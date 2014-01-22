@@ -3,7 +3,7 @@ var ChatBox = Backbone.Model.extend({
   initialize: function(){
     var regex = new RegExp(/username=([^&]+)/g);
     var url = document.URL;
-    this.set({roomname: "all",
+    this.set({roomname: "",
               roomList: {},
               friends: {},
               messageList: [],
@@ -11,13 +11,14 @@ var ChatBox = Backbone.Model.extend({
             });
   },
   submit: function(message){
+    // debugger;
     $.ajax({
       // always use this url
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'POST',
       data: JSON.stringify({username: this.get('userName'),
                             text: message,
-                            roomname: roomname}),
+                            roomname: this.get('roomname')}),
       contentType: 'application/json',
       success: function (data) {
         console.log('chatterbox: Message sent');
@@ -28,12 +29,16 @@ var ChatBox = Backbone.Model.extend({
     });
   },
   getMessage: function(options){
+    var data = {order:'-createdAt'};
+    var room = this.get('roomname');
+    debugger;
+    this.get('roomname') || (data.where = {roomname:this.get('roomname')});
     $.ajax({
       url: 'https://api.parse.com/1/classes/chatterbox',
       type: 'GET',
       //to apply restriction on data received (eg. sort, limit), 
       //pls create an object under data.
-      data: {order:'-createdAt'},
+      data: data,
       contentType: 'application/json',
       success: options.success,
       error: function (data) {
@@ -46,36 +51,47 @@ var ChatBox = Backbone.Model.extend({
 // TODO: clear out roomList periodically
 // $(document).ready(function(){
 var ChatBoxView = Backbone.View.extend({
+  el: 'body',
+  events: {
+    'click .user' : "userClickHandler",
+    'click .room' : "roomClickHandler",
+    'click button#createRoom' : 'roomCreateHandler',
+    'click button#submitMessage' : 'submitClickHandler'
+  },
+  userClickHandler: function(event){
+
+    console.log('userclick');
+    var friend = this.model.get('')
+    this.model.set(JSON.stringify(!friend));
+  },
+  roomClickHandler: function(event){
+    var room = $(event.currentTarget).text();
+    $('h3').text("You are in room: " + room);
+    this.model.set('roomname', room);
+  },
+  roomCreateHandler: function(event){
+    var room =  $('#newRoomInput').val();
+    $('h3').text("You are in room: " + room);
+    this.model.set('roomname', room);
+  },
+  submitClickHandler: function(event){
+    var message = $("#userInput").val();
+    if(message === "") return;
+    this.model.submit(message);
+  },
   initialize: function(){
-    $("body").on("click", '#user', function(){
-      friends[this.textContent] = !friends[this.textContent];
-    });
-    var updateRoomname = function(room){
-      $('h3').text("You are in room: " + room);
-      roomname = room;
-    };
-    $('body').on("click", '.room', function(){
-      updateRoomname(this.textContent);
-    });
-    $("#createRoomButton").on('click', function(){
-      updateRoomname($('#newRoomInput').val());
-    });
-    $("#submitButton").on('click', function(){
-      var message = $("#userInput").val();
-      if(message === "") return;
-      submit(userName, message);
-    });
     var options = {
-      model: this.model,
       success:function (data) {
-                var messages = data.results
-                $('#messages').html("");
-                this.displayMessages(messages);
-                this.buildRoomList(messages, roomList, $('#rooms'));
-              }.bind(this),
+        console.log('successful get!');
+        var model = this.model;
+        var messages = data.results
+        $('#messages').html("");
+        this.displayMessages(messages);
+        this.buildRoomList(messages, model.get('roomList'), $('#rooms'));
+      }.bind(this),
       failure: function(data){console.log("Failed to get messages")}
             };
-    setInterval(this.model.getMessage.bind(this.model,options), 300);
+    setInterval(this.model.getMessage.bind(this.model,options), 1000);
   },
   displayMessages: function(messages) {
     var context;
@@ -104,7 +120,6 @@ var ChatBoxView = Backbone.View.extend({
     }
   },
   buildRoomList: function(data, roomListModel, $roomListView){
-    debugger;
     _.each(data, function(value){
       if (!roomListModel[value.roomname]){
         roomListModel[value.roomname] = true;
@@ -116,7 +131,8 @@ var ChatBoxView = Backbone.View.extend({
   }
 });
 
-var chatBox = new ChatBox();
-var chatBoxView = new ChatBoxView({model:chatBox});
-
-$('body').append(chatBoxView.render());
+$(document).ready(function(){
+  var chatBox = new ChatBox();
+  var chatBoxView = new ChatBoxView({model:chatBox});
+  // $('body').append(chatBoxView.render());
+});

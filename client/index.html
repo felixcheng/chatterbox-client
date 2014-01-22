@@ -17,10 +17,10 @@
 
     <!-- templates -->
     <script id="message-template" type="text/x-handlebars-template">
-      <span id="user">{{user_name}}</span>
-      <span id="time">{{time}}</span>
+      <span class="user">{{user_name}}</span>
+      <span class="time">{{time}}</span>
       <br />
-      <span id="message">{{message}}</span>
+      <span class="message">{{message}}</span>
     </script>
   </head>
   <body>
@@ -28,9 +28,9 @@
       <h1>Chat-Client</h1>
       <h3>You are in room: </h3>
       <input type="text" id="userInput">
-      <button id="submitButton">Submit</button>
+      <button id="submitMessage">Submit</button>
       <input type="text" id="newRoomInput">
-      <button id="createRoomButton">Enter Room</button>
+      <button id="createRoom">Enter Room</button>
       <div id="display">
         <div id="rooms"></div>
         <div id="messages"></div>
